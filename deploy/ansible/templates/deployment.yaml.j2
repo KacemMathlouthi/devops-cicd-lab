@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ app_name }}
+  namespace: {{ k8s_namespace }}
+  labels:
+    app: {{ app_name }}
+spec:
+  replicas: {{ replicas }}
+  selector:
+    matchLabels:
+      app: {{ app_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ app_name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ container_port }}"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: app
+          image: "{{ image }}:{{ image_tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ container_port }}
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

@@ -1,0 +1,61 @@
+- name: Deploy devops-cicd-lab to Kubernetes
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  collections:
+    - kubernetes.core
+
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    app_name: devops-cicd-lab
+    k8s_namespace: demo
+    image: kacemmathlouthi/devops-cicd-lab
+    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
+    container_port: 5000
+    replicas: 2
+    ingress_host: app.127-0-0-1.nip.io
+    kubeconfig_path: "{{ lookup('env', 'KUBECONFIG') | default(lookup('env', 'HOME') ~ '/.kube/config', true) }}"
+    kube_context: "{{ lookup('env', 'KUBE_CONTEXT') | default('kind-devops-cicd-lab', true) }}"
+
+  tasks:
+    - name: Apply Deployment
+      kubernetes.core.k8s:
+        state: present
+        kubeconfig: "{{ kubeconfig_path }}"
+        context: "{{ kube_context }}"
+        definition: "{{ lookup('template', 'templates/deployment.yaml.j2') | from_yaml }}"
+        wait: true
+        wait_timeout: 180
+
+    - name: Apply Service
+      kubernetes.core.k8s:
+        state: present
+        kubeconfig: "{{ kubeconfig_path }}"
+        context: "{{ kube_context }}"
+        definition: "{{ lookup('template', 'templates/service.yaml.j2') | from_yaml }}"
+
+    - name: Apply Ingress
+      kubernetes.core.k8s:
+        state: present
+        kubeconfig: "{{ kubeconfig_path }}"
+        context: "{{ kube_context }}"
+        definition: "{{ lookup('template', 'templates/ingress.yaml.j2') | from_yaml }}"
+
+    - name: Show what was deployed
+      kubernetes.core.k8s_info:
+        kubeconfig: "{{ kubeconfig_path }}"
+        context: "{{ kube_context }}"
+        api_version: v1
+        kind: Pod
+        namespace: "{{ k8s_namespace }}"
+        label_selectors:
+          - "app={{ app_name }}"
+      register: pods
+
+    - name: Print pod summary
+      ansible.builtin.debug:
+        msg: "{{ item.metadata.name }} -> {{ item.status.phase }}"
+      loop: "{{ pods.resources }}"
+      loop_control:
+        label: "{{ item.metadata.name }}"
