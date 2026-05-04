@@ -35,8 +35,55 @@ provider "kubernetes" {
   client_key             = kind_cluster.this.client_key
 }
 
+provider "helm" {
+  kubernetes {
+    host                   = kind_cluster.this.endpoint
+    cluster_ca_certificate = kind_cluster.this.cluster_ca_certificate
+    client_certificate     = kind_cluster.this.client_certificate
+    client_key             = kind_cluster.this.client_key
+  }
+}
+
 resource "kubernetes_namespace" "demo" {
   metadata {
     name = var.namespace
   }
+}
+
+resource "helm_release" "ingress_nginx" {
+  name             = "ingress-nginx"
+  namespace        = "ingress-nginx"
+  create_namespace = true
+
+  repository = "https://kubernetes.github.io/ingress-nginx"
+  chart      = "ingress-nginx"
+  version    = "4.11.3"
+
+  values = [yamlencode({
+    controller = {
+      nodeSelector = {
+        "ingress-ready" = "true"
+      }
+      tolerations = [{
+        key      = "node-role.kubernetes.io/control-plane"
+        operator = "Equal"
+        effect   = "NoSchedule"
+      }]
+      service = {
+        type = "NodePort"
+      }
+      hostPort = {
+        enabled = true
+      }
+      publishService = {
+        enabled = false
+      }
+      extraArgs = {
+        publish-status-address = "localhost"
+      }
+    }
+  })]
+
+  wait    = true
+  timeout = 300
 }
