@@ -49,6 +49,22 @@
         context: "{{ kube_context }}"
         definition: "{{ lookup('template', 'templates/servicemonitor.yaml.j2') | from_yaml }}"
 
+    - name: Apply Grafana dashboard ConfigMap
+      kubernetes.core.k8s:
+        state: present
+        kubeconfig: "{{ kubeconfig_path }}"
+        context: "{{ kube_context }}"
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: "{{ app_name }}-dashboard"
+            namespace: monitoring
+            labels:
+              grafana_dashboard: "1"
+          data:
+            devops-cicd-lab.json: "{{ lookup('file', 'files/grafana-dashboard.json') }}"
+
     - name: Show what was deployed
       kubernetes.core.k8s_info:
         kubeconfig: "{{ kubeconfig_path }}"
