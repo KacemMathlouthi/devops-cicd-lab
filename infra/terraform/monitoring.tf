@@ -45,10 +45,22 @@ resource "helm_release" "kube_prometheus_stack" {
 
     alertmanager = {
       alertmanagerSpec = {
+        configSecret = "alertmanager-config"
         resources = {
           requests = { cpu = "20m", memory = "32Mi" }
           limits   = { cpu = "100m", memory = "128Mi" }
         }
+        volumes = [{
+          name = "resend-creds"
+          secret = {
+            secretName = "alertmanager-resend"
+          }
+        }]
+        volumeMounts = [{
+          name      = "resend-creds"
+          mountPath = "/etc/resend"
+          readOnly  = true
+        }]
       }
       ingress = {
         enabled          = true
