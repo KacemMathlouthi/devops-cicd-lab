@@ -113,6 +113,65 @@ pipeline {
                 }
             }
         }
+
+        stage('Infrastructure (Terraform)') {
+            steps {
+                dir('infra/terraform') {
+                    sh '''
+                        if [ -f /host-tf-state/terraform.tfstate ]; then
+                            cp /host-tf-state/terraform.tfstate ./terraform.tfstate
+                        fi
+
+                        terraform init -input=false -no-color
+                        terraform fmt -check -no-color
+                        terraform validate -no-color
+
+                        terraform plan -input=false -no-color -out=tfplan
+                        terraform show -no-color tfplan
+                        terraform apply -input=false -no-color tfplan
+
+                        cp ./terraform.tfstate /host-tf-state/terraform.tfstate
+                    '''
+                }
+            }
+        }
+
+        stage('Configure & Deploy (Ansible)') {
+            steps {
+                withCredentials([file(credentialsId: 'kind-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                    dir('deploy/ansible') {
+                        sh '''
+                            export KUBECONFIG="$KUBECONFIG_FILE"
+                            export IMAGE_TAG="$BUILD_NUMBER"
+                            ansible-playbook site.yml
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                sh '''
+                    set -e
+                    for i in $(seq 1 30); do
+                        code=$(curl -s -o /tmp/smoke-body -w '%{http_code}' \
+                            -H "Host: app.127-0-0-1.nip.io" \
+                            http://devops-cicd-lab-control-plane/ || true)
+                        if [ "$code" = "200" ]; then
+                            echo "Smoke test OK (HTTP $code)"
+                            cat /tmp/smoke-body
+                            echo
+                            exit 0
+                        fi
+                        echo "attempt $i/30: HTTP $code, retrying in 2s..."
+                        sleep 2
+                    done
+                    echo "Smoke test FAILED — app did not return 200 after 60s"
+                    exit 1
+                '''
+            }
+        }
     }
 
     post {
