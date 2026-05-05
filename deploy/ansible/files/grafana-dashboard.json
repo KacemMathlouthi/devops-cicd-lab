@@ -11,10 +11,7 @@
       "title": "Pods Up",
       "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
       "targets": [
-        {
-          "expr": "sum(up{namespace=\"demo\",job=\"devops-cicd-lab\"})",
-          "refId": "A"
-        }
+        {"expr": "sum(up{namespace=\"demo\",job=\"devops-cicd-lab\"})", "refId": "A"}
       ],
       "fieldConfig": {
         "defaults": {
@@ -40,10 +37,7 @@
       "title": "Pod Restarts (total)",
       "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
       "targets": [
-        {
-          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"demo\",pod=~\"devops-cicd-lab-.*\"})",
-          "refId": "A"
-        }
+        {"expr": "sum(kube_pod_container_status_restarts_total{namespace=\"demo\",pod=~\"devops-cicd-lab-.*\"})", "refId": "A"}
       ],
       "fieldConfig": {
         "defaults": {
@@ -67,13 +61,26 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "Total Requests/sec",
-      "gridPos": {"h": 4, "w": 12, "x": 12, "y": 0},
+      "title": "Available / Desired Replicas",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
       "targets": [
-        {
-          "expr": "sum(rate(app_requests_total{namespace=\"demo\"}[1m]))",
-          "refId": "A"
-        }
+        {"expr": "kube_deployment_status_replicas_available{namespace=\"demo\",deployment=\"devops-cicd-lab\"}", "legendFormat": "available", "refId": "A"},
+        {"expr": "kube_deployment_spec_replicas{namespace=\"demo\",deployment=\"devops-cicd-lab\"}", "legendFormat": "desired", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Total Requests/sec",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "targets": [
+        {"expr": "sum(rate(app_requests_total{namespace=\"demo\"}[1m]))", "refId": "A"}
       ],
       "fieldConfig": {"defaults": {"unit": "reqps"}},
       "options": {
@@ -83,44 +90,52 @@
       }
     },
     {
-      "id": 4,
+      "id": 5,
       "type": "timeseries",
       "title": "Pod CPU",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
       "targets": [
-        {
-          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"demo\",pod=~\"devops-cicd-lab-.*\",container=\"app\"}[2m]))",
-          "legendFormat": "{{pod}}",
-          "refId": "A"
-        }
+        {"expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"demo\",pod=~\"devops-cicd-lab-.*\",container=\"app\"}[2m]))", "legendFormat": "{{pod}}", "refId": "A"}
       ],
       "fieldConfig": {"defaults": {"unit": "percentunit"}}
     },
     {
-      "id": 5,
+      "id": 6,
       "type": "timeseries",
       "title": "Pod Memory (working set)",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
       "targets": [
-        {
-          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"demo\",pod=~\"devops-cicd-lab-.*\",container=\"app\"})",
-          "legendFormat": "{{pod}}",
-          "refId": "A"
-        }
+        {"expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"demo\",pod=~\"devops-cicd-lab-.*\",container=\"app\"})", "legendFormat": "{{pod}}", "refId": "A"}
       ],
       "fieldConfig": {"defaults": {"unit": "bytes"}}
     },
     {
-      "id": 6,
+      "id": 7,
+      "type": "timeseries",
+      "title": "Network Inbound (bytes/sec)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "targets": [
+        {"expr": "sum by (pod) (rate(container_network_receive_bytes_total{namespace=\"demo\",pod=~\"devops-cicd-lab-.*\"}[1m]))", "legendFormat": "{{pod}}", "refId": "A"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "Bps"}}
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Network Outbound (bytes/sec)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "targets": [
+        {"expr": "sum by (pod) (rate(container_network_transmit_bytes_total{namespace=\"demo\",pod=~\"devops-cicd-lab-.*\"}[1m]))", "legendFormat": "{{pod}}", "refId": "A"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "Bps"}}
+    },
+    {
+      "id": 9,
       "type": "timeseries",
       "title": "App Request Rate by Endpoint",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
       "targets": [
-        {
-          "expr": "sum by (endpoint) (rate(app_requests_total{namespace=\"demo\"}[1m]))",
-          "legendFormat": "{{endpoint}}",
-          "refId": "A"
-        }
+        {"expr": "sum by (endpoint) (rate(app_requests_total{namespace=\"demo\"}[1m]))", "legendFormat": "{{endpoint}}", "refId": "A"}
       ],
       "fieldConfig": {"defaults": {"unit": "reqps"}}
     }
@@ -134,5 +149,5 @@
   "timezone": "browser",
   "title": "devops-cicd-lab",
   "uid": "devops-cicd-lab",
-  "version": 1
+  "version": 2
 }
