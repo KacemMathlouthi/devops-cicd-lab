@@ -37,3 +37,9 @@ Thumbs.db
 
 # Kubeconfigs written by the kind provider in the working dir
 infra/terraform/*-config
+
+# Report (compiled output, planning doc, captured screenshots are local-only)
+report/*.pdf
+report/SCREENSHOTS.md
+report/screenshots/
+*.typ
