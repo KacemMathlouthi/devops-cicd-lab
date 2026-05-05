@@ -115,6 +115,9 @@ pipeline {
         }
 
         stage('Infrastructure (Terraform)') {
+            environment {
+                TF_VAR_k8s_endpoint_override = 'https://devops-cicd-lab-control-plane:6443'
+            }
             steps {
                 dir('infra/terraform') {
                     sh '''
