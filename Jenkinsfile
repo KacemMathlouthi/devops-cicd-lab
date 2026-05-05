@@ -157,12 +157,13 @@ pipeline {
             steps {
                 sh '''
                     set -e
+                    URL="http://app.127-0-0-1.nip.io/"
                     for i in $(seq 1 30); do
                         code=$(curl -s -o /tmp/smoke-body -w '%{http_code}' \
-                            -H "Host: app.127-0-0-1.nip.io" \
-                            http://devops-cicd-lab-control-plane/ || true)
+                            --connect-to app.127-0-0-1.nip.io:80:devops-cicd-lab-control-plane:80 \
+                            "$URL" || true)
                         if [ "$code" = "200" ]; then
-                            echo "Smoke test OK (HTTP $code)"
+                            echo "Smoke test OK (HTTP $code) against $URL"
                             cat /tmp/smoke-body
                             echo
                             exit 0
@@ -170,7 +171,7 @@ pipeline {
                         echo "attempt $i/30: HTTP $code, retrying in 2s..."
                         sleep 2
                     done
-                    echo "Smoke test FAILED — app did not return 200 after 60s"
+                    echo "Smoke test FAILED — $URL did not return 200 after 60s"
                     exit 1
                 '''
             }
