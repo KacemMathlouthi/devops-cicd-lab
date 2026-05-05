@@ -42,6 +42,13 @@
         context: "{{ kube_context }}"
         definition: "{{ lookup('template', 'templates/ingress.yaml.j2') | from_yaml }}"
 
+    - name: Apply ServiceMonitor (Prometheus scrape config)
+      kubernetes.core.k8s:
+        state: present
+        kubeconfig: "{{ kubeconfig_path }}"
+        context: "{{ kube_context }}"
+        definition: "{{ lookup('template', 'templates/servicemonitor.yaml.j2') | from_yaml }}"
+
     - name: Show what was deployed
       kubernetes.core.k8s_info:
         kubeconfig: "{{ kubeconfig_path }}"
